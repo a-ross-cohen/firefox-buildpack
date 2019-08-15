@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+set -o errexit
+set -o pipefail
+set -o nounset
+unset GIT_DIR
+
+function topic() {
+  echo "-----> $*..."
+}
+
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
+ENV_DIR=${3:-}
+
+BIN_DIR=$BUILD_DIR/.firefox
+mkdir -p $BIN_DIR
+
+# config
+VERSION=36.0
+LANG=en-US
+PLATFORM=linux64
+
+# Buildpack URL
+ARCHIVE_NAME=firefox
+FILE_NAME=${ARCHIVE_NAME}-${VERSION}.tar.bz2
+BUILDPACK_FIREFOX_PACKAGE="https://download.mozilla.org/?product=firefox-${VERSION}-SSL&os=${PLATFORM}&lang=${LANG}"
+
+mkdir -p $CACHE_DIR
+if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
+  topic "Downloading Firefox ${VERSION}"
+  indent "package url: ${BUILDPACK_FIREFOX_PACKAGE}"
+  curl $BUILDPACK_FIREFOX_PACKAGE -L -o $CACHE_DIR/$FILE_NAME
+  indent "Downloaded"
+fi
+
+topic "Extracting Firefox binaries to ${BUILD_DIR}/vendor/${ARCHIVE_NAME}"
+tar jxf $CACHE_DIR/$FILE_NAME -C $BIN_DIR
+indent "Extracted"
+
+topic "Exporting updated PATH"
+mkdir -p $BUILD_DIR/.profile.d
+echo "export PATH=\$PATH:\$HOME/.firefox" >> $BUILD_DIR/.profile.d/firefox.sh
+indent "Exported"
