@@ -26,7 +26,7 @@ BIN_DIR=$BUILD_DIR/.firefox
 mkdir -p $BIN_DIR
 
 # config
-VERSION=36.0
+VERSION=68.0
 LANG=en-US
 PLATFORM=linux64
 
